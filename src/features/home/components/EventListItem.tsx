@@ -63,7 +63,7 @@ const EventListItem: FC<Props> = ({ event, onClickSignUp }) => {
 
     actions.push(
       <ZUIButton
-        key="action"
+        key="signupButton"
         label={buttonLabel}
         onClick={(ev) => {
           if (onClickSignUp) {
@@ -80,7 +80,7 @@ const EventListItem: FC<Props> = ({ event, onClickSignUp }) => {
     );
 
     if (event.num_participants_available < event.num_participants_required) {
-      actions.push(<ZUISignUpChip status="needed" />);
+      actions.push(<ZUISignUpChip status="needed" key="signupChip" />);
     }
   }
 

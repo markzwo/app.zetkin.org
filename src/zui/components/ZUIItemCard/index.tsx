@@ -6,6 +6,7 @@ import ZUIPersonAvatar, { ZUIPersonAvatarProps } from '../ZUIPersonAvatar';
 import { MUIIcon } from '../types';
 import ZUIIcon from '../ZUIIcon';
 import ZUIText from '../ZUIText';
+import React from 'react';
 
 type ItemCardBase = {
   /**
@@ -184,19 +185,24 @@ const ZUIItemCard: FC<ItemCard> = (props) => {
             </Box>
           </Box>
           {hasArrayContent && (
-            <Stack spacing="0.5rem">
-              {content.map((c) => {
-                if (typeof c == 'string') {
-                  return (
-                    <ZUIText key={c} color="secondary" variant="bodySmRegular">
-                      {c}
-                    </ZUIText>
-                  );
-                } else {
-                  return c;
-                }
-              })}
-            </Stack>
+            <div>OK</div>
+            // <Stack spacing="0.5rem">
+            //   {content.map((c, index) => {
+            //     if (typeof c == 'string') {
+            //       return (
+            //         <ZUIText
+            //           key={index}
+            //           color="secondary"
+            //           variant="bodySmRegular"
+            //         >
+            //           {c}
+            //         </ZUIText>
+            //       );
+            //     } else {
+            //       return <React.Fragment key={index}>c</React.Fragment>;
+            //     }
+            //   })}
+            // </Stack>
           )}
           {hasStringContent && (
             <ZUIText color="secondary" variant="bodySmRegular">

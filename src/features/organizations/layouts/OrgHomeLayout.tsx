@@ -1,7 +1,7 @@
 'use client';
 
-import { Box } from '@mui/material';
-import { FC, ReactNode, Suspense } from 'react';
+import { Box, Theme } from '@mui/material';
+import { FC, ReactNode, Suspense, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import { NorthWest } from '@mui/icons-material';
@@ -23,11 +23,65 @@ import usePublicSubOrgs from '../hooks/usePublicSubOrgs';
 import useMembership from '../hooks/useMembership';
 import useFollowOrgMutations from '../hooks/useFollowOrgMutations';
 import useConnectOrg from '../hooks/useConnectOrg';
+import makeStyles from '@mui/styles/makeStyles';
+import theme from '../../../zui/theme';
+import EventsMap from '../components/EventsMap';
+import useUpcomingOrgEvents from '../hooks/useUpcomingOrgEvents';
+import useMyEvents from '../../events/hooks/useMyEvents';
+import { ZetkinEventWithStatus } from '../../home/types';
 
 type Props = {
   children: ReactNode;
   org: ZetkinOrganization;
 };
+
+type StyleProps = {
+  selectedItem: string;
+};
+
+const useStyles = makeStyles<Theme, StyleProps>(() => ({
+  container: {
+    display: 'grid',
+    height: '100dvh',
+    [theme.breakpoints.up('sm')]: {
+      gridTemplateAreas: '"header map" "list map" "footer map"',
+      gridTemplateColumns: 'minmax(200px, 400px) 1fr',
+      gridTemplateRows: 'auto 1fr auto',
+    },
+    [theme.breakpoints.down('sm')]: {
+      gridTemplateAreas: '"header" "main" "footer"',
+      gridTemplateRows: 'auto 1fr auto',
+    },
+  },
+  footer: {
+    gridArea: 'footer',
+  },
+  map: {
+    gridArea: 'map',
+    [theme.breakpoints.down('sm')]: {
+      gridArea: 'main',
+      display: ({ selectedItem }) =>
+        selectedItem === 'map' ? 'block' : 'none',
+    },
+  },
+  list: {
+    overflow: 'auto',
+    [theme.breakpoints.down('sm')]: {
+      gridArea: 'main',
+      display: ({ selectedItem }) =>
+        selectedItem === 'list' ? 'block' : 'none',
+    },
+  },
+  toggleButton: {
+    display: 'none',
+    [theme.breakpoints.down('sm')]: {
+      display: 'block',
+      position: 'absolute',
+      bottom: 10,
+      left: '50%',
+    },
+  },
+}));
 
 const OrgHomeLayout: FC<Props> = ({ children, org }) => {
   const messages = useMessages(messageIds);
@@ -39,11 +93,33 @@ const OrgHomeLayout: FC<Props> = ({ children, org }) => {
   const lastSegment = path?.split('/')[3] ?? 'home';
   const showSuborgsTab = lastSegment == 'suborgs' || subOrgs.length > 0;
 
+  const [displayWhenConstrained, setDisplayWhenConstrained] = useState('list');
+  const classes = useStyles({ selectedItem: displayWhenConstrained });
+
+  const orgEvents = useUpcomingOrgEvents(1);
+  const myEvents = useMyEvents();
+
+  const allEvents = useMemo(() => {
+    return orgEvents.map<ZetkinEventWithStatus>((event) => ({
+      ...event,
+      status:
+        myEvents.find((userEvent) => userEvent.id == event.id)?.status || null,
+    }));
+  }, [orgEvents]);
+
   const user = useUser();
   const membership = useMembership(org.id).data;
 
   const { followOrg, unfollowOrg } = useFollowOrgMutations(org.id);
   const { connectOrg } = useConnectOrg(org.id);
+
+  const toggleDisplay = () => {
+    if (displayWhenConstrained === 'list') {
+      setDisplayWhenConstrained('map');
+    } else {
+      setDisplayWhenConstrained('list');
+    }
+  };
 
   const navBarItems = [
     {
@@ -62,12 +138,7 @@ const OrgHomeLayout: FC<Props> = ({ children, org }) => {
   }
 
   return (
-    <Box
-      sx={{
-        marginX: 'auto',
-        maxWidth: 960,
-      }}
-    >
+    <Box className={classes.container}>
       <Box
         sx={(theme) => ({
           bgcolor: theme.palette.grey[100],
@@ -146,19 +217,23 @@ const OrgHomeLayout: FC<Props> = ({ children, org }) => {
             flexDirection="column"
             height="90dvh"
             justifyContent="center"
+            className={classes.list}
           >
             <ZUILogoLoadingIndicator />
           </Box>
         }
       >
-        <Box minHeight="90dvh">{children}</Box>
+        <Box className={classes.list}>{children}</Box>
       </Suspense>
+      <Box className={classes.map}>
+        <EventsMap events={allEvents} />
+      </Box>
       <Box
+        className={classes.footer}
         alignItems="center"
         component="footer"
         display="flex"
         flexDirection="column"
-        mx={1}
         my={2}
         sx={{ opacity: 0.75 }}
       >
@@ -173,6 +248,9 @@ const OrgHomeLayout: FC<Props> = ({ children, org }) => {
           text={messages.home.footer.privacyPolicy()}
         />
       </Box>
+      <button className={classes.toggleButton} onClick={toggleDisplay}>
+        Toggle
+      </button>
     </Box>
   );
 };
