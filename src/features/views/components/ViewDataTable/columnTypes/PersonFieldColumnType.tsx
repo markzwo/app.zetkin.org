@@ -25,6 +25,7 @@ export default class PersonFieldColumnType
     return {
       filterable: true,
       valueGetter: (params) => {
+        // TODO: I think we need to conditionally convert to a `Date` here?
         const cell = params.row[params.field];
         return getValue(cell, column);
       },

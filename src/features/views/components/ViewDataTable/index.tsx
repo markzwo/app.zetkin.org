@@ -60,6 +60,7 @@ import messageIds from 'features/views/l10n/messageIds';
 import useDebounce from 'utils/hooks/useDebounce';
 import useViewMutations from 'features/views/hooks/useViewMutations';
 import oldTheme from 'theme';
+import useCustomFields from '../../../profile/hooks/useCustomFields';
 
 declare module '@mui/x-data-grid-pro' {
   interface ColumnMenuPropsOverrides {
@@ -366,21 +367,24 @@ const ViewDataTable: FunctionComponent<ViewDataTableProps> = ({
   const dispatch = useAppDispatch();
   const apiClient = useApiClient();
   const state = useAppSelector((state) => state);
+  const customFields = useCustomFields(orgId).data ?? [];
 
   const unConfiguredGridColumns = [
     avatarColumn,
     ...columns.map((col) => ({
       field: `col_${col.id}`,
-      filterOperators: getFilterOperators(
-        columnTypes[col.type].getColDef(
+      filterOperators: getFilterOperators({
+        ...columnTypes[col.type].getColDef(
           col,
           accessLevel,
           state,
           apiClient,
           dispatch,
           orgId
-        )
-      ),
+        ),
+        type: customFields.find((field) => col.config.field === field.slug)
+          ?.type,
+      }),
       headerName: col.title,
       minWidth: 100,
       resizable: true,
@@ -394,6 +398,7 @@ const ViewDataTable: FunctionComponent<ViewDataTableProps> = ({
         dispatch,
         orgId
       ),
+      type: customFields.find((field) => col.config.field === field.slug)?.type,
     })),
   ];
 
